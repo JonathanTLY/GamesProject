@@ -1,0 +1,75 @@
+﻿@page "/Booking"
+@inject HttpClient _client
+@inject IJSRuntime js
+@attribute [Authorize]
+
+<div style="background: #ffd89b; /* fallback for old browsers */
+     background: -webkit-linear-gradient(to right, #19547b, #ffd89b); /* Chrome 10-25, Safari 5.1-6 */ background: linear-gradient(to right, #19547b, #ffd89b); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */">
+    <h1>This is our Booking</h1>
+
+
+    @if (Bookings == null)
+    {
+        <div class="alert alert-info">Loading Bookings...</div> }
+    else
+    {
+        <table class="table table-responsive">
+            <thead>
+                <tr>
+                    <th> Booking Id </th>
+                    <th> Customer Name </th>
+                    <th> Game Name </th>
+                    <th> Date </th>
+                    <th> Duration in Days </th>
+                    <th> Price </th>
+                    <th> Actions </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var Booking in Bookings)
+                {
+                    <tr>
+                        <td> @Booking.Id </td>
+                        <td> @Booking.Customer.Name </td>
+                        <td> @Booking.Game.Name </td>
+                        <td> @Booking.DateCreated.Date.ToString("dd MMMM yyyy") </td>
+                        <td> @((Booking.DateIn - Booking.DateOut).TotalDays.ToString()) </td>
+                        <td> @Booking.Game.Price </td>
+
+                        <td>
+                            <a href="/Bookings/view/@Booking.Id" class="btn btn-primary">
+                                <span class="oi oi-book"></span>
+                            </a>
+                            <a href="/Bookings/edit/@Booking.Id" class="btn btn-warning">
+                                <span class="oi oi-pencil"></span>
+                            </a>
+                            <button class="btn btn-danger" @onclick="@(()=>Delete(Booking.Id))">
+                                <span class="oi oi-delete"></span>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>}
+
+    @code{
+        private List<Booking> Bookings;
+
+        protected async override Task OnInitializedAsync()
+        {
+            Bookings = await _client.GetFromJsonAsync<List<Booking>>($"{Endpoints.BookingsEndpoint}");
+        }
+
+        async Task Delete(int BookingId)
+        {
+            var Booking = Bookings.First(q => q.Id == BookingId);
+            var confirm = await js.InvokeAsync<bool>("confirm", $"Do you want to delete {Booking.Id}?");
+
+            if (confirm)
+            {
+                await _client.DeleteAsync($"{Endpoints.BookingsEndpoint}/{BookingId}");
+                await OnInitializedAsync();
+            }
+        }
+    }
+</div>

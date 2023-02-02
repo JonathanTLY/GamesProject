@@ -1,0 +1,62 @@
+﻿@page "/Genre"
+@inject HttpClient _client
+@inject IJSRuntime js
+@attribute [Authorize]
+
+<div style="background: #ffd89b; /* fallback for old browsers */
+     background: -webkit-linear-gradient(to right, #19547b, #ffd89b); /* Chrome 10-25, Safari 5.1-6 */ background: linear-gradient(to right, #19547b, #ffd89b); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */">
+    <h1>This is our Genre</h1>
+
+
+@if (Genres == null)
+{
+<div class="alert alert-info">Loading Genres...</div> }
+            else
+            {
+<table class="table table-responsive">
+    <thead>
+        <tr>
+            <th> Name </th>
+            <th> Actions </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var Genre in Genres)
+        {
+<tr>
+    <td> @Genre.Name </td>
+    <td>
+        <a href="/Genres/view/@Genre.Id" class="btn btn-primary">
+            <span class="oi oi-book"></span>
+        </a>
+        <a href="/Genres/edit/@Genre.Id" class="btn btn-warning">
+            <span class="oi oi-pencil"></span>
+        </a>
+        <button class="btn btn-danger" @onclick="@(()=>Delete(Genre.Id))">
+            <span class="oi oi-delete"></span>
+        </button>
+    </td>
+</tr>}
+    </tbody>
+</table>}
+
+@code{
+    private List<Genre> Genres;
+
+    protected async override Task OnInitializedAsync()
+    {
+        Genres = await _client.GetFromJsonAsync<List<Genre>>($"{Endpoints.GenresEndpoint}");
+    }
+
+    async Task Delete(int genreId)
+    {
+        var genre = Genres.First(q => q.Id == genreId);
+        var confirm = await js.InvokeAsync<bool>("confirm", $"Do you want to delete {genre.Name}?");
+        if (confirm)
+        {
+            await _client.DeleteAsync($"{Endpoints.GenresEndpoint}/{genreId}");
+            await OnInitializedAsync();
+        }
+    }
+}
+</div>

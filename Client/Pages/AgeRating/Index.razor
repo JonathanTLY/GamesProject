@@ -1,0 +1,63 @@
+﻿@page "/AgeRating"
+@inject HttpClient _client
+@inject IJSRuntime js
+@attribute [Authorize]
+
+<div style="background: #ffd89b; /* fallback for old browsers */
+     background: -webkit-linear-gradient(to right, #19547b, #ffd89b); /* Chrome 10-25, Safari 5.1-6 */ background: linear-gradient(to right, #19547b, #ffd89b); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */">
+    <h1>This is our AgeRating</h1>
+
+
+    @if (AgeRatings == null)
+    {
+        <div class="alert alert-info">Loading AgeRatings...</div> }
+    else
+    {
+        <table class="table table-responsive">
+            <thead>
+                <tr>
+                    <th> Name </th>
+                    <th> Actions </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var AgeRating in AgeRatings)
+                {
+                    <tr>
+                        <td> @AgeRating.Name </td>
+                        <td>
+                            <a href="/AgeRatings/view/@AgeRating.Id" class="btn btn-primary">
+                                <span class="oi oi-book"></span>
+                            </a>
+                            <a href="/AgeRatings/edit/@AgeRating.Id" class="btn btn-warning">
+                                <span class="oi oi-pencil"></span>
+                            </a>
+                            <button class="btn btn-danger" @onclick="@(()=>Delete(AgeRating.Id))">
+                                <span class="oi oi-delete"></span>
+                            </button>
+                        </td>
+                    </tr>
+}
+            </tbody>
+        </table>}
+
+    @code{
+        private List<AgeRating> AgeRatings;
+
+        protected async override Task OnInitializedAsync()
+        {
+            AgeRatings = await _client.GetFromJsonAsync<List<AgeRating>>($"{Endpoints.AgeRatingsEndpoint}");
+        }
+
+        async Task Delete(int AgeRatingId)
+        {
+            var AgeRating = AgeRatings.First(q => q.Id == AgeRatingId);
+            var confirm = await js.InvokeAsync<bool>("confirm", $"Do you want to delete {AgeRating.Name}?");
+            if (confirm)
+            {
+                await _client.DeleteAsync($"{Endpoints.AgeRatingsEndpoint}/{AgeRatingId}");
+                await OnInitializedAsync();
+            }
+        }
+    }
+</div>

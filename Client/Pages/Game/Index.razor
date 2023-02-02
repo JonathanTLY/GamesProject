@@ -1,0 +1,75 @@
+﻿@page "/Game"
+@inject HttpClient _client
+@inject IJSRuntime js
+@attribute [Authorize]
+
+<div style="background: #ffd89b; /* fallback for old browsers */
+     background: -webkit-linear-gradient(to right, #19547b, #ffd89b); /* Chrome 10-25, Safari 5.1-6 */ background: linear-gradient(to right, #19547b, #ffd89b); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */">
+    <h1>This is our Game</h1>
+
+
+    @if (Games == null)
+    {
+        <div class="alert alert-info">Loading Games...</div> }
+    else
+    {
+        <table class="table table-responsive">
+            <thead>
+                <tr>
+                    <th> Game Name </th>
+                    <th> ReleaseDate </th>
+                    <th> Genre </th>
+                    <th> GamePublisher </th>
+                    <th> AgeRating </th>
+                    <th> Price </th>
+                    <th> Actions </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var Game in Games)
+                {
+                <tr>
+                    <td> @Game.Name </td>
+                    <td> @Game.ReleaseDate </td>
+                    <td> @Game.Genre.Name </td>
+                    <td> @Game.GamePublisher.Name </td>
+                    <td> @Game.AgeRating.Name </td>
+                    <td> @Game.Price </td>
+
+                    <td>
+                        <a href="/Games/view/@Game.Id" class="btn btn-primary">
+                            <span class="oi oi-book"></span>
+                        </a>
+                        <a href="/Games/edit/@Game.Id" class="btn btn-warning">
+                            <span class="oi oi-pencil"></span>
+                        </a>
+                        <button class="btn btn-danger" @onclick="@(()=>Delete(Game.Id))">
+                            <span class="oi oi-delete"></span>
+                        </button>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>}
+
+    @code{
+        private List<Game> Games;
+
+        protected async override Task OnInitializedAsync()
+        {
+            Games = await _client.GetFromJsonAsync<List<Game>>($"{Endpoints.GamesEndpoint}");
+        }
+
+        async Task Delete(int GameId)
+        {
+            var Game = Games.First(q => q.Id == GameId);
+            var confirm = await js.InvokeAsync<bool>("confirm", $"Do you want to delete{Game.ReleaseDate}?");
+
+            if (confirm)
+            {
+                await _client.DeleteAsync($"{Endpoints.GamesEndpoint}/{GameId}");
+                await OnInitializedAsync();
+            }
+        }
+    }
+</div>
